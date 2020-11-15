@@ -107,7 +107,7 @@ always @(posedge clk or negedge rstn) begin
     spcnt <= {CNT_SIZE{1'b0}};
     max_cnt <= {CNT_SIZE{1'b0}};
     max_addr <= {ADDR_SIZE{1'b0}};
-    act_update_end <= 1'b0;
+    act_update_end_d1 <= 1'b0;
     find_max_end <= 1'b0;
     max_update_end <= 1'b0;
     tail_idx <= {CNT_SIZE{1'b0}};
@@ -189,7 +189,9 @@ always @(posedge clk or negedge rstn) begin
   if(!rstn) begin
     act_update_end <= 1'b0;
   end
+  else begin
     act_update_end <= act_update_end_d1;
+  end
 end
 
 // Address Table CAM
