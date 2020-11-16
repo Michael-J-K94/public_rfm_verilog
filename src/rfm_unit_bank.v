@@ -255,6 +255,84 @@ pe_cam pe_max
 
 // Unit for Finding Max in RFM
 // Need to optimize (jhpark)
+
+max_64
+#(
+  .NUM_ENTRY (NUM_ENTRY),
+  .CNT_SIZE  (CNT_SIZE)
+)
+finding_max
+(
+  .clk(clk),
+  .rstn(rstn),
+  .cnt_table_0(cnt_table[0]),
+  .cnt_table_1(cnt_table[1]),
+  .cnt_table_2(cnt_table[2]),
+  .cnt_table_3(cnt_table[3]),
+  .cnt_table_4(cnt_table[4]),
+  .cnt_table_5(cnt_table[5]),
+  .cnt_table_6(cnt_table[6]),
+  .cnt_table_7(cnt_table[7]),
+  .cnt_table_8(cnt_table[8]),
+  .cnt_table_9(cnt_table[9]),
+  .cnt_table_10(cnt_table[10]),
+  .cnt_table_11(cnt_table[11]),
+  .cnt_table_12(cnt_table[12]),
+  .cnt_table_13(cnt_table[13]),
+  .cnt_table_14(cnt_table[14]),
+  .cnt_table_15(cnt_table[15]),
+  .cnt_table_16(cnt_table[16]),
+  .cnt_table_17(cnt_table[17]),
+  .cnt_table_18(cnt_table[18]),
+  .cnt_table_19(cnt_table[19]),
+  .cnt_table_20(cnt_table[20]),
+  .cnt_table_21(cnt_table[21]),
+  .cnt_table_22(cnt_table[22]),
+  .cnt_table_23(cnt_table[23]),
+  .cnt_table_24(cnt_table[24]),
+  .cnt_table_25(cnt_table[25]),
+  .cnt_table_26(cnt_table[26]),
+  .cnt_table_27(cnt_table[27]),
+  .cnt_table_28(cnt_table[28]),
+  .cnt_table_29(cnt_table[29]),
+  .cnt_table_30(cnt_table[30]),
+  .cnt_table_31(cnt_table[31]),
+  .cnt_table_32(cnt_table[32]),
+  .cnt_table_33(cnt_table[33]),
+  .cnt_table_34(cnt_table[34]),
+  .cnt_table_35(cnt_table[35]),
+  .cnt_table_36(cnt_table[36]),
+  .cnt_table_37(cnt_table[37]),
+  .cnt_table_38(cnt_table[38]),
+  .cnt_table_39(cnt_table[39]),
+  .cnt_table_40(cnt_table[40]),
+  .cnt_table_41(cnt_table[41]),
+  .cnt_table_42(cnt_table[42]),
+  .cnt_table_43(cnt_table[43]),
+  .cnt_table_44(cnt_table[44]),
+  .cnt_table_45(cnt_table[45]),
+  .cnt_table_46(cnt_table[46]),
+  .cnt_table_47(cnt_table[47]),
+  .cnt_table_48(cnt_table[48]),
+  .cnt_table_49(cnt_table[49]),
+  .cnt_table_50(cnt_table[50]),
+  .cnt_table_51(cnt_table[51]),
+  .cnt_table_52(cnt_table[52]),
+  .cnt_table_53(cnt_table[53]),
+  .cnt_table_54(cnt_table[54]),
+  .cnt_table_55(cnt_table[55]),
+  .cnt_table_56(cnt_table[56]),
+  .cnt_table_57(cnt_table[57]),
+  .cnt_table_58(cnt_table[58]),
+  .cnt_table_59(cnt_table[59]),
+  .cnt_table_60(cnt_table[60]),
+  .cnt_table_61(cnt_table[61]),
+  .cnt_table_62(cnt_table[62]),
+  .cnt_table_63(cnt_table[63]),
+  .next_max_cnt(next_max_cnt)
+);
+
+/*
 wire [CNT_SIZE-1:0] max_0;
 wire [CNT_SIZE-1:0] max_1;
 wire [CNT_SIZE-1:0] max_0_0;
@@ -384,5 +462,6 @@ assign max_1_1_1_0_0  = (cnt_table[56]  > cnt_table[57])  ? cnt_table[56]  : cnt
 assign max_1_1_1_0_1  = (cnt_table[58]  > cnt_table[59])  ? cnt_table[58]  : cnt_table[59];
 assign max_1_1_1_1_0  = (cnt_table[60]  > cnt_table[61])  ? cnt_table[60]  : cnt_table[61];
 assign max_1_1_1_1_1  = (cnt_table[62]  > cnt_table[63])  ? cnt_table[62]  : cnt_table[63];
+*/
 
 endmodule

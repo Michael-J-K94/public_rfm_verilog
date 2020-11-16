@@ -7,4 +7,5 @@
 ../src/pe64.v
 ../src/pe256.v
 ../src/pe1024.v
+../src/max_64.v
 
