@@ -4,7 +4,7 @@ module rfm_unit_bank
 #(
   parameter NUM_ENTRY = 64,
   parameter NUM_ENTRY_BITS = 6, // log2 (NUM_ENTRY)
-  parameter RFM_TH = 8,
+  parameter RFM_TH = 20,
   parameter ADDR_SIZE = 18,
   parameter CNT_SIZE = 32
 )
@@ -33,34 +33,62 @@ reg rfm_cmd_reg;
 integer iter;
 
 // RFM Table
-reg [ADDR_SIZE-1:0] addr_table [0:NUM_ENTRY-1];
-wire [NUM_ENTRY-1:0] addr_matches;
-reg [CNT_SIZE-1:0] cnt_table [0:NUM_ENTRY-1];
-wire [NUM_ENTRY-1:0] cnt_matches;
-//wire [NUM_ENTRY-1:0] cnt_min_matches;
-//wire [NUM_ENTRY-1:0] cnt_max_matches;
+//reg [ADDR_SIZE-1:0] addr_table [0:NUM_ENTRY-1];
+//wire [NUM_ENTRY-1:0] addr_matches;
+//reg [CNT_SIZE-1:0] cnt_table [0:NUM_ENTRY-1];
+//wire [NUM_ENTRY-1:0] cnt_matches;
+
 reg [CNT_SIZE-1:0] spcnt;
 reg [CNT_SIZE-1:0] max_cnt;
 wire [CNT_SIZE-1:0] next_max_cnt;
 reg [ADDR_SIZE-1:0] max_addr;
 wire [NUM_ENTRY_BITS-1:0] hit_addr_idx;
 wire [NUM_ENTRY_BITS-1:0] hit_cnt_idx;
-//wire [NUM_ENTRY_BITS-1:0] min_idx;
-//wire [NUM_ENTRY_BITS-1:0] max_idx;
+
 wire table_hit;
 wire cnt_hit;
-wire act_update_end;
-reg act_update_end_d1;
-reg act_update_end_d2;
-wire rfm_update_end;
-reg rfm_update_end_d1;
-reg rfm_update_end_d2;
-reg rfm_update_end_d3;
+wire act_cmd_d1;
+reg act_cmd_d2;
+reg act_cmd_d3;
+wire rfm_cmd_d1;
+reg rfm_cmd_d2;
+reg rfm_cmd_d3;
+reg rfm_cmd_d4;
 reg max_update_end;
-reg [NUM_ENTRY_BITS:0] tail_idx;
-wire full;
+reg max_en;
 
-assign full = (tail_idx == NUM_ENTRY);
+
+
+
+
+
+
+/* ADDRESS CAM */
+wire [ADDR_SIZE-1:0] addr_cam_data_in;
+wire [NUM_ENTRY_BITS-1:0] addr_cam_addr_in;
+wire addr_cam_read_en;
+wire addr_cam_write_en;
+wire addr_cam_search_en;
+wire addr_cam_reset;
+wire [ADDR_SIZE-1:0] addr_cam_data_out;
+wire [NUM_ENTRY_BITS-1:0] addr_cam_addr_out;
+wire addr_cam_match;
+
+/* COUNT CAM */
+wire [CNT_SIZE-1:0] cnt_cam_data_in;
+wire [NUM_ENTRY_BITS-1:0] cnt_cam_addr_in;
+wire cnt_cam_read_en;
+wire cnt_cam_write_en;
+wire cnt_cam_search_en;
+wire cnt_cam_reset;
+wire [CNT_SIZE-1:0] cnt_cam_data_out;
+wire [NUM_ENTRY_BITS-1:0] cnt_cam_addr_out;
+wire cnt_cam_match;
+
+
+
+
+
 
 // Finite State Machine
 always @(posedge clk or negedge rstn) begin
@@ -81,7 +109,7 @@ always @(posedge clk or negedge rstn) begin
         end
       end
       STATE_ACT: begin
-        if(act_update_end_d2) begin
+        if(act_cmd_d3) begin
           state <= STATE_IDLE;
         end
         else begin
@@ -103,18 +131,17 @@ always @(posedge clk or negedge rstn) begin
   end
 end
 
-// Main
+// Table Management
 always @(posedge clk or negedge rstn) begin
   if(!rstn) begin
     for(iter=0;iter<NUM_ENTRY;iter=iter+1) begin
-      addr_table[iter] <= {ADDR_SIZE{1'b1}};
-      cnt_table[iter] <= {ADDR_SIZE{1'b0}};
+//      addr_table[iter] <= {ADDR_SIZE{1'b0}};
+//      cnt_table[iter] <= {ADDR_SIZE{1'b0}};
     end
     spcnt <= {CNT_SIZE{1'b0}};
     max_cnt <= {CNT_SIZE{1'b0}};
     max_addr <= {ADDR_SIZE{1'b0}};
     max_update_end <= 1'b0;
-    tail_idx <= {CNT_SIZE{1'b0}};
   end
   else begin
     case(state)
@@ -125,25 +152,21 @@ always @(posedge clk or negedge rstn) begin
       end
 
       STATE_ACT: begin
-        if(act_update_end_d2) begin
+        if(act_cmd_d2) begin
           if(table_hit) begin
-            cnt_table[hit_addr_idx] <= cnt_table[hit_addr_idx] + 1;
-            if(cnt_table[hit_addr_idx] + 1 > max_cnt) begin
-              max_cnt <= cnt_table[hit_addr_idx] + 1;
+//            cnt_table[hit_addr_idx] <= cnt_table[hit_addr_idx] + 1;
+//            if(cnt_table[hit_addr_idx] + 1 > max_cnt) begin
+            if(cnt_cam_data_out + 1 > max_cnt) begin
+              max_cnt <= cnt_cam_data_out + 1;
             end
           end
           else begin
             if(spcnt + 1 > max_cnt) begin
               max_cnt <= spcnt + 1;
             end
-            if(~full) begin
-              addr_table[tail_idx] <= act_addr_reg;
-              cnt_table[tail_idx] <= 1;
-              tail_idx <= tail_idx + 1;
-            end
-            else if(cnt_hit) begin
-              addr_table[hit_cnt_idx] <= act_addr_reg;
-              cnt_table[hit_cnt_idx] <= spcnt + 1;
+            if(cnt_hit) begin
+//              addr_table[hit_cnt_idx] <= act_addr_reg;
+//              cnt_table[hit_cnt_idx] <= spcnt + 1;
             end
             else begin
               spcnt <= spcnt + 1;
@@ -153,13 +176,16 @@ always @(posedge clk or negedge rstn) begin
       end
     
       STATE_RFM: begin
-        if(rfm_update_end_d3) begin
-          cnt_table[hit_cnt_idx] <= spcnt;
+        if(rfm_cmd_d4) begin
+//          cnt_table[hit_cnt_idx] <= spcnt;
           nrr_cmd <= 1'b1;
-          nrr_addr <= addr_table[hit_cnt_idx];
+          //nrr_addr <= addr_table[hit_cnt_idx];
+          nrr_addr <= addr_cam_data_out;
           max_update_end <= 1'b1;
+          max_en <= 1'b1;
         end
         if(max_update_end) begin
+          max_en <= 1'b0;
           max_cnt <= next_max_cnt;
           max_update_end <= 1'b0;
         end
@@ -185,52 +211,88 @@ always @(posedge clk or negedge rstn) begin
 end
 
 
-/*
-always @(posedge clk or negedge rstn) begin
-  if(!rstn) begin
-    act_update_end <= 1'b0;
-  end
-  else begin
-    act_update_end <= act_update_end_d1;
-  end
-end
-*/
-
 // Commands
-assign act_update_end = (state == STATE_ACT && prev_state == STATE_IDLE) ? 1'b1 : 1'b0;
-assign rfm_update_end = (state == STATE_RFM && prev_state == STATE_IDLE) ? 1'b1 : 1'b0;
+assign act_cmd_d1 = (state == STATE_ACT && prev_state == STATE_IDLE) ? 1'b1 : 1'b0;
+assign rfm_cmd_d1 = (state == STATE_RFM && prev_state == STATE_IDLE) ? 1'b1 : 1'b0;
 
 // Delays
 always @(posedge clk or negedge rstn) begin
   if(!rstn) begin
     prev_state <= 4'b0;
-    act_update_end_d1 <= 1'b0;
-    rfm_update_end_d1 <= 1'b0;
-    rfm_update_end_d2 <= 1'b0;
-    rfm_update_end_d3 <= 1'b0;
+    act_cmd_d2 <= 1'b0;
+    rfm_cmd_d2 <= 1'b0;
+    rfm_cmd_d3 <= 1'b0;
+    rfm_cmd_d4 <= 1'b0;
   end
   else begin
     prev_state <= state;
-    act_update_end_d1 <= act_update_end;
-    act_update_end_d2 <= act_update_end_d1;
-    rfm_update_end_d1 <= rfm_update_end;
-    rfm_update_end_d2 <= rfm_update_end_d1;
-    rfm_update_end_d3 <= rfm_update_end_d2;
+    act_cmd_d2 <= act_cmd_d1;
+    act_cmd_d3 <= act_cmd_d2;
+    rfm_cmd_d2 <= rfm_cmd_d1;
+    rfm_cmd_d3 <= rfm_cmd_d2;
+    rfm_cmd_d4 <= rfm_cmd_d3;
   end
 end
+
+
+
+
+assign hit_addr_idx = addr_cam_addr_out;
+assign table_hit = addr_cam_match;
+
+assign hit_cnt_idx = cnt_cam_addr_out;
+assign cnt_hit     = cnt_cam_match;
+
+
+/* ADDR CAM SIGNALS */
+assign addr_cam_data_in   = act_addr_reg;
+assign addr_cam_addr_in   = hit_cnt_idx;
+assign addr_cam_read_en   =  (state == STATE_RFM) && rfm_cmd_d4;
+assign addr_cam_write_en  =  (state == STATE_ACT) && act_cmd_d3 && ~table_hit && cnt_hit;
+assign addr_cam_search_en =  (state == STATE_ACT) && act_cmd_d1;
+assign addr_cam_reset     = ~rstn;
+
+/* COUNT CAM SIGNALS */
+assign cnt_cam_data_in    = ((state == STATE_ACT) && act_cmd_d1)               ? spcnt                :
+                             (state == STATE_RFM) && rfm_cmd_d3                ? max_cnt              :
+                             (state == STATE_RFM) && rfm_cmd_d4                ? spcnt                :
+                             (state == STATE_ACT) && act_cmd_d3 && table_hit   ? cnt_cam_data_out + 1 : 
+                                                                                 spcnt + 1;
+assign cnt_cam_addr_in    =  (state == STATE_ACT) &&               table_hit   ? hit_addr_idx         : 
+                                                                                 hit_cnt_idx;
+assign cnt_cam_read_en    =  (state == STATE_ACT) && act_cmd_d2 && table_hit;
+assign cnt_cam_write_en   =  (state == STATE_RFM) && rfm_cmd_d4 ||
+                            ((state == STATE_ACT) && act_cmd_d3 && (table_hit ||
+                                                                   (~table_hit && cnt_hit)));
+assign cnt_cam_search_en  = ((state == STATE_ACT) && act_cmd_d1) || 
+                             (state == STATE_RFM) && rfm_cmd_d3;
+assign cnt_cam_reset      = ~rstn;
+
+
+
+
+
+/* CAM INSTANTIATION */
+addr_cam #(.WORD_SIZE(ADDR_SIZE), .ROW_NUM(NUM_ENTRY), .ENTRY_WIDTH(NUM_ENTRY_BITS)) addr_cam (addr_cam_data_in, addr_cam_addr_in, addr_cam_read_en, addr_cam_write_en, addr_cam_search_en,
+  addr_cam_reset, addr_cam_data_out, addr_cam_addr_out, addr_cam_match);
+
+cnt_cam #(.WORD_SIZE(CNT_SIZE), .ROW_NUM(NUM_ENTRY), .ENTRY_WIDTH(NUM_ENTRY_BITS)) cnt_cam (cnt_cam_data_in, cnt_cam_addr_in, cnt_cam_read_en, cnt_cam_write_en, cnt_cam_search_en, cnt_cam_reset, cnt_cam_data_out, cnt_cam_addr_out, cnt_cam_match, clk, rstn, max_en, next_max_cnt);
 
 
 
 // Address Table CAM
 // Need to optimize (jhpark)
 genvar i;
+/*
 generate
   for (i = 0; i < NUM_ENTRY; i=i+1) begin: addr_cam
     assign addr_matches[i] = ~(|(addr_table[i]^act_addr_reg));   // 0: hit, 1: miss
   end
 endgenerate
+*/
 
 
+/*
 // Count Table CAM
 // Need to optimize (jhpark)
 generate
@@ -238,9 +300,9 @@ generate
     assign cnt_matches[i] = (state == STATE_RFM) ? ~|(cnt_table[i]^max_cnt) : ~|(cnt_table[i]^spcnt);   // 0: hit, 1: miss
   end
 endgenerate
+*/
 
-
-
+/*
 // pe for CAMs
 pe_cam pe_addr
 (
@@ -250,7 +312,9 @@ pe_cam pe_addr
   .bin(hit_addr_idx),
   .vld(table_hit)
 );
+*/
 
+/*
 pe_cam pe_cnt
 (
   .clk(clk),
@@ -259,7 +323,7 @@ pe_cam pe_cnt
   .bin(hit_cnt_idx),
   .vld(cnt_hit)
 );
-
+*/
 /*
 pe_cam pe_max
 (
@@ -274,6 +338,7 @@ pe_cam pe_max
 // Unit for Finding Max in RFM
 // Need to optimize (jhpark)
 
+/*
 max_64
 #(
   .NUM_ENTRY (NUM_ENTRY),
@@ -349,5 +414,6 @@ finding_max
   .cnt_table_63(cnt_table[63]),
   .next_max_cnt(next_max_cnt)
 );
+*/
 
 endmodule

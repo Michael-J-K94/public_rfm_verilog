@@ -1,11 +1,8 @@
 
-./tb_rfm.v
+./tb_rfm.sv
 ../src/rfm_unit_bank.v
-../src/pe_cam.v
-../src/pe4.v
-../src/pe16.v
-../src/pe64.v
-../src/pe256.v
-../src/pe1024.v
 ../src/max_64.v
+../src/addr_cam.v
+../src/cnt_cam.v
+../src/cam_components.v
 
