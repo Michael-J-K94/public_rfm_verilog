@@ -26,6 +26,7 @@ localparam STATE_RFM   = 4'd2;
 
 // Finite State Machine
 reg [3:0] state;
+reg [3:0] prev_state;
 reg [ADDR_SIZE-1:0] act_addr_reg;
 reg rfm_cmd_reg;
 
@@ -35,21 +36,26 @@ integer iter;
 reg [ADDR_SIZE-1:0] addr_table [0:NUM_ENTRY-1];
 wire [NUM_ENTRY-1:0] addr_matches;
 reg [CNT_SIZE-1:0] cnt_table [0:NUM_ENTRY-1];
-//wire [NUM_ENTRY-1:0] cnt_matches;
-wire [NUM_ENTRY-1:0] cnt_min_matches;
-wire [NUM_ENTRY-1:0] cnt_max_matches;
+wire [NUM_ENTRY-1:0] cnt_matches;
+//wire [NUM_ENTRY-1:0] cnt_min_matches;
+//wire [NUM_ENTRY-1:0] cnt_max_matches;
 reg [CNT_SIZE-1:0] spcnt;
 reg [CNT_SIZE-1:0] max_cnt;
 wire [CNT_SIZE-1:0] next_max_cnt;
 reg [ADDR_SIZE-1:0] max_addr;
-wire [NUM_ENTRY_BITS-1:0] hit_idx;
-wire [NUM_ENTRY_BITS-1:0] min_idx;
-wire [NUM_ENTRY_BITS-1:0] max_idx;
+wire [NUM_ENTRY_BITS-1:0] hit_addr_idx;
+wire [NUM_ENTRY_BITS-1:0] hit_cnt_idx;
+//wire [NUM_ENTRY_BITS-1:0] min_idx;
+//wire [NUM_ENTRY_BITS-1:0] max_idx;
 wire table_hit;
-wire min_hit;
-reg act_update_end;
+wire cnt_hit;
+wire act_update_end;
 reg act_update_end_d1;
-reg find_max_end;
+reg act_update_end_d2;
+wire rfm_update_end;
+reg rfm_update_end_d1;
+reg rfm_update_end_d2;
+reg rfm_update_end_d3;
 reg max_update_end;
 reg [NUM_ENTRY_BITS:0] tail_idx;
 wire full;
@@ -75,7 +81,7 @@ always @(posedge clk or negedge rstn) begin
         end
       end
       STATE_ACT: begin
-        if(act_update_end) begin
+        if(act_update_end_d2) begin
           state <= STATE_IDLE;
         end
         else begin
@@ -107,8 +113,6 @@ always @(posedge clk or negedge rstn) begin
     spcnt <= {CNT_SIZE{1'b0}};
     max_cnt <= {CNT_SIZE{1'b0}};
     max_addr <= {ADDR_SIZE{1'b0}};
-    act_update_end_d1 <= 1'b0;
-    find_max_end <= 1'b0;
     max_update_end <= 1'b0;
     tail_idx <= {CNT_SIZE{1'b0}};
   end
@@ -117,18 +121,15 @@ always @(posedge clk or negedge rstn) begin
       STATE_IDLE: begin
         nrr_cmd <= 1'b0;
         nrr_addr <= {ADDR_SIZE{1'b0}};
-        act_update_end_d1 <= 1'b0;
-        find_max_end <= 1'b0;
         max_update_end <= 1'b0;
       end
 
       STATE_ACT: begin
-        act_update_end_d1 <= 1'b1;
-        if(act_update_end) begin
+        if(act_update_end_d2) begin
           if(table_hit) begin
-            cnt_table[hit_idx] <= cnt_table[hit_idx] + 1;
-            if(cnt_table[hit_idx] + 1 > max_cnt) begin
-              max_cnt <= cnt_table[hit_idx] + 1;
+            cnt_table[hit_addr_idx] <= cnt_table[hit_addr_idx] + 1;
+            if(cnt_table[hit_addr_idx] + 1 > max_cnt) begin
+              max_cnt <= cnt_table[hit_addr_idx] + 1;
             end
           end
           else begin
@@ -140,9 +141,9 @@ always @(posedge clk or negedge rstn) begin
               cnt_table[tail_idx] <= 1;
               tail_idx <= tail_idx + 1;
             end
-            else if(min_hit) begin
-              addr_table[min_idx] <= act_addr_reg;
-              cnt_table[min_idx] <= spcnt + 1;
+            else if(cnt_hit) begin
+              addr_table[hit_cnt_idx] <= act_addr_reg;
+              cnt_table[hit_cnt_idx] <= spcnt + 1;
             end
             else begin
               spcnt <= spcnt + 1;
@@ -152,15 +153,15 @@ always @(posedge clk or negedge rstn) begin
       end
     
       STATE_RFM: begin
-        find_max_end <= 1'b1;
-        if(find_max_end) begin
-          cnt_table[max_idx] <= spcnt;
+        if(rfm_update_end_d3) begin
+          cnt_table[hit_cnt_idx] <= spcnt;
           nrr_cmd <= 1'b1;
-          nrr_addr <= addr_table[max_idx];
+          nrr_addr <= addr_table[hit_cnt_idx];
           max_update_end <= 1'b1;
         end
         if(max_update_end) begin
           max_cnt <= next_max_cnt;
+          max_update_end <= 1'b0;
         end
       end
     endcase
@@ -184,7 +185,7 @@ always @(posedge clk or negedge rstn) begin
 end
 
 
-// Delays
+/*
 always @(posedge clk or negedge rstn) begin
   if(!rstn) begin
     act_update_end <= 1'b0;
@@ -193,6 +194,32 @@ always @(posedge clk or negedge rstn) begin
     act_update_end <= act_update_end_d1;
   end
 end
+*/
+
+// Commands
+assign act_update_end = (state == STATE_ACT && prev_state == STATE_IDLE) ? 1'b1 : 1'b0;
+assign rfm_update_end = (state == STATE_RFM && prev_state == STATE_IDLE) ? 1'b1 : 1'b0;
+
+// Delays
+always @(posedge clk or negedge rstn) begin
+  if(!rstn) begin
+    prev_state <= 4'b0;
+    act_update_end_d1 <= 1'b0;
+    rfm_update_end_d1 <= 1'b0;
+    rfm_update_end_d2 <= 1'b0;
+    rfm_update_end_d3 <= 1'b0;
+  end
+  else begin
+    prev_state <= state;
+    act_update_end_d1 <= act_update_end;
+    act_update_end_d2 <= act_update_end_d1;
+    rfm_update_end_d1 <= rfm_update_end;
+    rfm_update_end_d2 <= rfm_update_end_d1;
+    rfm_update_end_d3 <= rfm_update_end_d2;
+  end
+end
+
+
 
 // Address Table CAM
 // Need to optimize (jhpark)
@@ -204,21 +231,11 @@ generate
 endgenerate
 
 
-// Count Table CAM (MIN)
-// Need to optimize (jhpark), CAM 세 개 합쳐보기
-generate
-  for (i = 0; i < NUM_ENTRY; i=i+1) begin: cnt_min_cam
-//    assign cnt_matches[i] = (state == STATE_RFM) ? |(cnt_table[i]^max_cnt) : |(cnt_table[i]^spcnt);   // 0: hit, 1: miss
-    assign cnt_min_matches[i] = ~(|(cnt_table[i]^spcnt));   // 0: hit, 1: miss
-  end
-endgenerate
-
-
-// Count Table CAM (MAX)
+// Count Table CAM
 // Need to optimize (jhpark)
 generate
-  for (i = 0; i < NUM_ENTRY; i=i+1) begin: cnt_max_cam
-    assign cnt_max_matches[i] = ~(|(cnt_table[i]^max_cnt));   // 0: hit, 1: miss
+  for (i = 0; i < NUM_ENTRY; i=i+1) begin: cnt_min_cam
+    assign cnt_matches[i] = (state == STATE_RFM) ? ~|(cnt_table[i]^max_cnt) : ~|(cnt_table[i]^spcnt);   // 0: hit, 1: miss
   end
 endgenerate
 
@@ -230,19 +247,20 @@ pe_cam pe_addr
   .clk(clk),
   .rst(~rstn),
   .oht(addr_matches),
-  .bin(hit_idx),
+  .bin(hit_addr_idx),
   .vld(table_hit)
 );
 
-pe_cam pe_min
+pe_cam pe_cnt
 (
   .clk(clk),
   .rst(~rstn),
-  .oht(cnt_min_matches),
-  .bin(min_idx),
-  .vld(min_hit)
+  .oht(cnt_matches),
+  .bin(hit_cnt_idx),
+  .vld(cnt_hit)
 );
 
+/*
 pe_cam pe_max
 (
   .clk(clk),
@@ -251,7 +269,7 @@ pe_cam pe_max
   .bin(max_idx),
   .vld()
 );
-
+*/
 
 // Unit for Finding Max in RFM
 // Need to optimize (jhpark)
@@ -331,137 +349,5 @@ finding_max
   .cnt_table_63(cnt_table[63]),
   .next_max_cnt(next_max_cnt)
 );
-
-/*
-wire [CNT_SIZE-1:0] max_0;
-wire [CNT_SIZE-1:0] max_1;
-wire [CNT_SIZE-1:0] max_0_0;
-wire [CNT_SIZE-1:0] max_0_1;
-wire [CNT_SIZE-1:0] max_1_0;
-wire [CNT_SIZE-1:0] max_1_1;
-wire [CNT_SIZE-1:0] max_0_0_0;
-wire [CNT_SIZE-1:0] max_0_0_1;
-wire [CNT_SIZE-1:0] max_0_1_0;
-wire [CNT_SIZE-1:0] max_0_1_1;
-wire [CNT_SIZE-1:0] max_1_0_0;
-wire [CNT_SIZE-1:0] max_1_0_1;
-wire [CNT_SIZE-1:0] max_1_1_0;
-wire [CNT_SIZE-1:0] max_1_1_1;
-wire [CNT_SIZE-1:0] max_0_0_0_0;
-wire [CNT_SIZE-1:0] max_0_0_0_1;
-wire [CNT_SIZE-1:0] max_0_0_1_0;
-wire [CNT_SIZE-1:0] max_0_0_1_1;
-wire [CNT_SIZE-1:0] max_0_1_0_0;
-wire [CNT_SIZE-1:0] max_0_1_0_1;
-wire [CNT_SIZE-1:0] max_0_1_1_0;
-wire [CNT_SIZE-1:0] max_0_1_1_1;
-wire [CNT_SIZE-1:0] max_1_0_0_0;
-wire [CNT_SIZE-1:0] max_1_0_0_1;
-wire [CNT_SIZE-1:0] max_1_0_1_0;
-wire [CNT_SIZE-1:0] max_1_0_1_1;
-wire [CNT_SIZE-1:0] max_1_1_0_0;
-wire [CNT_SIZE-1:0] max_1_1_0_1;
-wire [CNT_SIZE-1:0] max_1_1_1_0;
-wire [CNT_SIZE-1:0] max_1_1_1_1;
-wire [CNT_SIZE-1:0] max_0_0_0_0_0;
-wire [CNT_SIZE-1:0] max_0_0_0_0_1;
-wire [CNT_SIZE-1:0] max_0_0_0_1_0;
-wire [CNT_SIZE-1:0] max_0_0_0_1_1;
-wire [CNT_SIZE-1:0] max_0_0_1_0_0;
-wire [CNT_SIZE-1:0] max_0_0_1_0_1;
-wire [CNT_SIZE-1:0] max_0_0_1_1_0;
-wire [CNT_SIZE-1:0] max_0_0_1_1_1;
-wire [CNT_SIZE-1:0] max_0_1_0_0_0;
-wire [CNT_SIZE-1:0] max_0_1_0_0_1;
-wire [CNT_SIZE-1:0] max_0_1_0_1_0;
-wire [CNT_SIZE-1:0] max_0_1_0_1_1;
-wire [CNT_SIZE-1:0] max_0_1_1_0_0;
-wire [CNT_SIZE-1:0] max_0_1_1_0_1;
-wire [CNT_SIZE-1:0] max_0_1_1_1_0;
-wire [CNT_SIZE-1:0] max_0_1_1_1_1;
-wire [CNT_SIZE-1:0] max_1_0_0_0_0;
-wire [CNT_SIZE-1:0] max_1_0_0_0_1;
-wire [CNT_SIZE-1:0] max_1_0_0_1_0;
-wire [CNT_SIZE-1:0] max_1_0_0_1_1;
-wire [CNT_SIZE-1:0] max_1_0_1_0_0;
-wire [CNT_SIZE-1:0] max_1_0_1_0_1;
-wire [CNT_SIZE-1:0] max_1_0_1_1_0;
-wire [CNT_SIZE-1:0] max_1_0_1_1_1;
-wire [CNT_SIZE-1:0] max_1_1_0_0_0;
-wire [CNT_SIZE-1:0] max_1_1_0_0_1;
-wire [CNT_SIZE-1:0] max_1_1_0_1_0;
-wire [CNT_SIZE-1:0] max_1_1_0_1_1;
-wire [CNT_SIZE-1:0] max_1_1_1_0_0;
-wire [CNT_SIZE-1:0] max_1_1_1_0_1;
-wire [CNT_SIZE-1:0] max_1_1_1_1_0;
-wire [CNT_SIZE-1:0] max_1_1_1_1_1;
-
-assign next_max_cnt = (max_0 > max_1) ? max_0 : max_1;
-assign max_0        = (max_0_0 > max_0_1) ? max_0_0 : max_0_1;
-assign max_1        = (max_1_0 > max_1_1) ? max_1_0 : max_1_1;
-assign max_0_0      = (max_0_0_0 > max_0_0_1) ? max_0_0_0 : max_0_0_1;
-assign max_0_1      = (max_0_1_0 > max_0_1_1) ? max_0_1_0 : max_0_1_1;
-assign max_1_0      = (max_1_0_0 > max_1_0_1) ? max_1_0_0 : max_1_0_1;
-assign max_1_1      = (max_1_1_0 > max_1_1_1) ? max_1_1_0 : max_1_1_1;
-
-assign max_0_0_0    = (max_0_0_0_0 > max_0_0_0_1) ? max_0_0_0_0 : max_0_0_0_1;
-assign max_0_0_1    = (max_0_0_1_0 > max_0_0_1_1) ? max_0_0_1_0 : max_0_0_1_1;
-assign max_0_1_0    = (max_0_1_0_0 > max_0_1_0_1) ? max_0_1_0_0 : max_0_1_0_1;
-assign max_0_1_1    = (max_0_1_1_0 > max_0_1_1_1) ? max_0_1_1_0 : max_0_1_1_1;
-assign max_1_0_0    = (max_1_0_0_0 > max_1_0_0_1) ? max_1_0_0_0 : max_1_0_0_1;
-assign max_1_0_1    = (max_1_0_1_0 > max_1_0_1_1) ? max_1_0_1_0 : max_1_0_1_1;
-assign max_1_1_0    = (max_1_1_0_0 > max_1_1_0_1) ? max_1_1_0_0 : max_1_1_0_1;
-assign max_1_1_1    = (max_1_1_1_0 > max_1_1_1_1) ? max_1_1_1_0 : max_1_1_1_1;
-
-assign max_0_0_0_0    = (max_0_0_0_0_0 > max_0_0_0_0_1) ? max_0_0_0_0_0 : max_0_0_0_0_1;
-assign max_0_0_0_1    = (max_0_0_0_1_0 > max_0_0_0_1_1) ? max_0_0_0_1_0 : max_0_0_0_1_1;
-assign max_0_0_1_0    = (max_0_0_1_0_0 > max_0_0_1_0_1) ? max_0_0_1_0_0 : max_0_0_1_0_1;
-assign max_0_0_1_1    = (max_0_0_1_1_0 > max_0_0_1_1_1) ? max_0_0_1_1_0 : max_0_0_1_1_1;
-assign max_0_1_0_0    = (max_0_1_0_0_0 > max_0_1_0_0_1) ? max_0_1_0_0_0 : max_0_1_0_0_1;
-assign max_0_1_0_1    = (max_0_1_0_1_0 > max_0_1_0_1_1) ? max_0_1_0_1_0 : max_0_1_0_1_1;
-assign max_0_1_1_0    = (max_0_1_1_0_0 > max_0_1_1_0_1) ? max_0_1_1_0_0 : max_0_1_1_0_1;
-assign max_0_1_1_1    = (max_0_1_1_1_0 > max_0_1_1_1_1) ? max_0_1_1_1_0 : max_0_1_1_1_1;
-assign max_1_0_0_0    = (max_1_0_0_0_0 > max_1_0_0_0_1) ? max_1_0_0_0_0 : max_1_0_0_0_1;
-assign max_1_0_0_1    = (max_1_0_0_1_0 > max_1_0_0_1_1) ? max_1_0_0_1_0 : max_1_0_0_1_1;
-assign max_1_0_1_0    = (max_1_0_1_0_0 > max_1_0_1_0_1) ? max_1_0_1_0_0 : max_1_0_1_0_1;
-assign max_1_0_1_1    = (max_1_0_1_1_0 > max_1_0_1_1_1) ? max_1_0_1_1_0 : max_1_0_1_1_1;
-assign max_1_1_0_0    = (max_1_1_0_0_0 > max_1_1_0_0_1) ? max_1_1_0_0_0 : max_1_1_0_0_1;
-assign max_1_1_0_1    = (max_1_1_0_1_0 > max_1_1_0_1_1) ? max_1_1_0_1_0 : max_1_1_0_1_1;
-assign max_1_1_1_0    = (max_1_1_1_0_0 > max_1_1_1_0_1) ? max_1_1_1_0_0 : max_1_1_1_0_1;
-assign max_1_1_1_1    = (max_1_1_1_1_0 > max_1_1_1_1_1) ? max_1_1_1_1_0 : max_1_1_1_1_1;
-
-assign max_0_0_0_0_0  = (cnt_table[0]  > cnt_table[1])  ? cnt_table[0]  : cnt_table[1];
-assign max_0_0_0_0_1  = (cnt_table[2]  > cnt_table[3])  ? cnt_table[2]  : cnt_table[3];
-assign max_0_0_0_1_0  = (cnt_table[4]  > cnt_table[5])  ? cnt_table[4]  : cnt_table[5];
-assign max_0_0_0_1_1  = (cnt_table[6]  > cnt_table[7])  ? cnt_table[6]  : cnt_table[7];
-assign max_0_0_1_0_0  = (cnt_table[8]  > cnt_table[9])  ? cnt_table[8]  : cnt_table[9];
-assign max_0_0_1_0_1  = (cnt_table[10] > cnt_table[11]) ? cnt_table[10] : cnt_table[11];
-assign max_0_0_1_1_0  = (cnt_table[12] > cnt_table[13]) ? cnt_table[12] : cnt_table[13];
-assign max_0_0_1_1_1  = (cnt_table[14] > cnt_table[15]) ? cnt_table[14] : cnt_table[15];
-assign max_0_1_0_0_0  = (cnt_table[16] > cnt_table[17]) ? cnt_table[16] : cnt_table[17];
-assign max_0_1_0_0_1  = (cnt_table[18] > cnt_table[19]) ? cnt_table[18] : cnt_table[19];
-assign max_0_1_0_1_0  = (cnt_table[20]  > cnt_table[21])  ? cnt_table[20]  : cnt_table[21];
-assign max_0_1_0_1_1  = (cnt_table[22]  > cnt_table[23])  ? cnt_table[22]  : cnt_table[23];
-assign max_0_1_1_0_0  = (cnt_table[24]  > cnt_table[25])  ? cnt_table[24]  : cnt_table[25];
-assign max_0_1_1_0_1  = (cnt_table[26]  > cnt_table[27])  ? cnt_table[26]  : cnt_table[27];
-assign max_0_1_1_1_0  = (cnt_table[28]  > cnt_table[29])  ? cnt_table[28]  : cnt_table[29];
-assign max_0_1_1_1_1  = (cnt_table[30]  > cnt_table[31])  ? cnt_table[30]  : cnt_table[31];
-assign max_1_0_0_0_0  = (cnt_table[32]  > cnt_table[33])  ? cnt_table[32]  : cnt_table[33];
-assign max_1_0_0_0_1  = (cnt_table[34]  > cnt_table[35])  ? cnt_table[34]  : cnt_table[35];
-assign max_1_0_0_1_0  = (cnt_table[36]  > cnt_table[37])  ? cnt_table[36]  : cnt_table[37];
-assign max_1_0_0_1_1  = (cnt_table[38]  > cnt_table[39])  ? cnt_table[38]  : cnt_table[39];
-assign max_1_0_1_0_0  = (cnt_table[40]  > cnt_table[41])  ? cnt_table[40]  : cnt_table[41];
-assign max_1_0_1_0_1  = (cnt_table[42]  > cnt_table[43])  ? cnt_table[42]  : cnt_table[43];
-assign max_1_0_1_1_0  = (cnt_table[44]  > cnt_table[45])  ? cnt_table[44]  : cnt_table[45];
-assign max_1_0_1_1_1  = (cnt_table[46]  > cnt_table[47])  ? cnt_table[46]  : cnt_table[47];
-assign max_1_1_0_0_0  = (cnt_table[48]  > cnt_table[49])  ? cnt_table[48]  : cnt_table[49];
-assign max_1_1_0_0_1  = (cnt_table[40]  > cnt_table[51])  ? cnt_table[50]  : cnt_table[51];
-assign max_1_1_0_1_0  = (cnt_table[52]  > cnt_table[53])  ? cnt_table[52]  : cnt_table[53];
-assign max_1_1_0_1_1  = (cnt_table[54]  > cnt_table[55])  ? cnt_table[54]  : cnt_table[55];
-assign max_1_1_1_0_0  = (cnt_table[56]  > cnt_table[57])  ? cnt_table[56]  : cnt_table[57];
-assign max_1_1_1_0_1  = (cnt_table[58]  > cnt_table[59])  ? cnt_table[58]  : cnt_table[59];
-assign max_1_1_1_1_0  = (cnt_table[60]  > cnt_table[61])  ? cnt_table[60]  : cnt_table[61];
-assign max_1_1_1_1_1  = (cnt_table[62]  > cnt_table[63])  ? cnt_table[62]  : cnt_table[63];
-*/
 
 endmodule
