@@ -4,9 +4,9 @@ module rfm_unit_bank
 #(
   parameter NUM_ENTRY = 64,
   parameter NUM_ENTRY_BITS = 6, // log2 (NUM_ENTRY)
-  parameter RFM_TH = 4,
+  parameter RFM_TH = 20,
   parameter ADDR_SIZE = 18,
-  parameter CNT_SIZE = 5
+  parameter CNT_SIZE = 32
 )
 (
   input clk,
@@ -274,14 +274,162 @@ assign cnt_cam_reset      = ~rstn;
 
 
 
+// Multi-Bank CAM
+
+// Address CAM
+wire [ADDR_SIZE-1:0] addr_cam_data_in_0;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_in_0;
+wire addr_cam_read_en_0;
+wire addr_cam_write_en_0;
+wire addr_cam_search_en_0;
+wire [ADDR_SIZE-1:0] addr_cam_data_out_0;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_out_0;
+wire addr_cam_match_0;
+wire [ADDR_SIZE-1:0] addr_cam_data_in_1;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_in_1;
+wire addr_cam_read_en_1;
+wire addr_cam_write_en_1;
+wire addr_cam_search_en_1;
+wire [ADDR_SIZE-1:0] addr_cam_data_out_1;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_out_1;
+wire addr_cam_match_1;
+wire [ADDR_SIZE-1:0] addr_cam_data_in_2;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_in_2;
+wire addr_cam_read_en_2;
+wire addr_cam_write_en_2;
+wire addr_cam_search_en_2;
+wire [ADDR_SIZE-1:0] addr_cam_data_out_2;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_out_2;
+wire addr_cam_match_2;
+wire [ADDR_SIZE-1:0] addr_cam_data_in_3;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_in_3;
+wire addr_cam_read_en_3;
+wire addr_cam_write_en_3;
+wire addr_cam_search_en_3;
+wire [ADDR_SIZE-1:0] addr_cam_data_out_3;
+wire [NUM_ENTRY_BITS-3:0] addr_cam_addr_out_3;
+wire addr_cam_match_3;
+
+
+assign addr_cam_data_in_0 = addr_cam_data_in;
+assign addr_cam_data_in_1 = addr_cam_data_in;
+assign addr_cam_data_in_2 = addr_cam_data_in;
+assign addr_cam_data_in_3 = addr_cam_data_in;
+assign addr_cam_addr_in_0 = addr_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign addr_cam_addr_in_1 = addr_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign addr_cam_addr_in_2 = addr_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign addr_cam_addr_in_3 = addr_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign addr_cam_read_en_0 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b00 ? addr_cam_read_en : 1'b0;
+assign addr_cam_read_en_1 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b01 ? addr_cam_read_en : 1'b0;
+assign addr_cam_read_en_2 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b10 ? addr_cam_read_en : 1'b0;
+assign addr_cam_read_en_3 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b11 ? addr_cam_read_en : 1'b0;
+assign addr_cam_write_en_0 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b00 ? addr_cam_write_en : 1'b0;
+assign addr_cam_write_en_1 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b01 ? addr_cam_write_en : 1'b0;
+assign addr_cam_write_en_2 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b10 ? addr_cam_write_en : 1'b0;
+assign addr_cam_write_en_3 = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b11 ? addr_cam_write_en : 1'b0;
+assign addr_cam_search_en_0 = addr_cam_search_en;
+assign addr_cam_search_en_1 = addr_cam_search_en;
+assign addr_cam_search_en_2 = addr_cam_search_en;
+assign addr_cam_search_en_3 = addr_cam_search_en;
+
+
+assign addr_cam_data_out = addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b00 ? addr_cam_data_out_0 : addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b01 ? addr_cam_data_out_1 : addr_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b10 ? addr_cam_data_out_2 : addr_cam_data_out_3;
+assign addr_cam_addr_out = addr_cam_match_0 ? {2'b00,addr_cam_addr_out_0} : addr_cam_match_1 ? {2'b01,addr_cam_addr_out_1} : addr_cam_match_2 ? {2'b10,addr_cam_addr_out_2} : {2'b11,addr_cam_addr_out_3};
+assign addr_cam_match    = addr_cam_match_0 | addr_cam_match_1 | addr_cam_match_2 | addr_cam_match_3;
+
+
+// Count CAM
+wire [CNT_SIZE-1:0] cnt_cam_data_in_0;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_in_0;
+wire cnt_cam_read_en_0;
+wire cnt_cam_write_en_0;
+wire cnt_cam_search_en_0;
+wire [CNT_SIZE-1:0] cnt_cam_data_out_0;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_out_0;
+wire cnt_cam_match_0;
+wire [CNT_SIZE-1:0] cnt_cam_data_in_1;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_in_1;
+wire cnt_cam_read_en_1;
+wire cnt_cam_write_en_1;
+wire cnt_cam_search_en_1;
+wire [CNT_SIZE-1:0] cnt_cam_data_out_1;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_out_1;
+wire cnt_cam_match_1;
+wire [CNT_SIZE-1:0] cnt_cam_data_in_2;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_in_2;
+wire cnt_cam_read_en_2;
+wire cnt_cam_write_en_2;
+wire cnt_cam_search_en_2;
+wire [CNT_SIZE-1:0] cnt_cam_data_out_2;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_out_2;
+wire cnt_cam_match_2;
+wire [CNT_SIZE-1:0] cnt_cam_data_in_3;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_in_3;
+wire cnt_cam_read_en_3;
+wire cnt_cam_write_en_3;
+wire cnt_cam_search_en_3;
+wire [CNT_SIZE-1:0] cnt_cam_data_out_3;
+wire [NUM_ENTRY_BITS-3:0] cnt_cam_addr_out_3;
+wire cnt_cam_match_3;
+
+
+assign cnt_cam_data_in_0 = cnt_cam_data_in;
+assign cnt_cam_data_in_1 = cnt_cam_data_in;
+assign cnt_cam_data_in_2 = cnt_cam_data_in;
+assign cnt_cam_data_in_3 = cnt_cam_data_in;
+assign cnt_cam_addr_in_0 = cnt_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign cnt_cam_addr_in_1 = cnt_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign cnt_cam_addr_in_2 = cnt_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign cnt_cam_addr_in_3 = cnt_cam_addr_in[NUM_ENTRY_BITS-3:0];
+assign cnt_cam_read_en_0 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b00 ? cnt_cam_read_en : 1'b0;
+assign cnt_cam_read_en_1 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b01 ? cnt_cam_read_en : 1'b0;
+assign cnt_cam_read_en_2 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b10 ? cnt_cam_read_en : 1'b0;
+assign cnt_cam_read_en_3 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b11 ? cnt_cam_read_en : 1'b0;
+assign cnt_cam_write_en_0 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b00 ? cnt_cam_write_en : 1'b0;
+assign cnt_cam_write_en_1 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b01 ? cnt_cam_write_en : 1'b0;
+assign cnt_cam_write_en_2 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b10 ? cnt_cam_write_en : 1'b0;
+assign cnt_cam_write_en_3 = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b11 ? cnt_cam_write_en : 1'b0;
+assign cnt_cam_search_en_0 = cnt_cam_search_en;
+assign cnt_cam_search_en_1 = cnt_cam_search_en;
+assign cnt_cam_search_en_2 = cnt_cam_search_en;
+assign cnt_cam_search_en_3 = cnt_cam_search_en;
+
+
+assign cnt_cam_data_out = cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b00 ? cnt_cam_data_out_0 : cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b01 ? cnt_cam_data_out_1 : cnt_cam_addr_in[NUM_ENTRY_BITS-1-:2] == 2'b10 ? cnt_cam_data_out_2 : cnt_cam_data_out_3;
+assign cnt_cam_addr_out = cnt_cam_match_0 ? {2'b00,cnt_cam_addr_out_0} : cnt_cam_match_1 ? {2'b01,cnt_cam_addr_out_1} : cnt_cam_match_2 ? {2'b10,cnt_cam_addr_out_2} : {2'b11,cnt_cam_addr_out_3};
+assign cnt_cam_match    = cnt_cam_match_0 | cnt_cam_match_1 | cnt_cam_match_2 | cnt_cam_match_3;
+
+
+// Next Max
+wire [CNT_SIZE-1:0] next_max_cnt_0;
+wire [CNT_SIZE-1:0] next_max_cnt_1;
+wire [CNT_SIZE-1:0] next_max_cnt_2;
+wire [CNT_SIZE-1:0] next_max_cnt_3;
+wire [CNT_SIZE-1:0] next_max_cnt_01;
+wire [CNT_SIZE-1:0] next_max_cnt_23;
+
+assign next_max_cnt    = next_max_cnt_01 > next_max_cnt_23 ? next_max_cnt_01 : next_max_cnt_23;
+assign next_max_cnt_01 = next_max_cnt_0  > next_max_cnt_1  ? next_max_cnt_0  : next_max_cnt_1;
+assign next_max_cnt_23 = next_max_cnt_2  > next_max_cnt_3  ? next_max_cnt_2  : next_max_cnt_3;
 
 
 /* CAM INSTANTIATION */
-addr_cam #(.WORD_SIZE(ADDR_SIZE), .ROW_NUM(NUM_ENTRY), .ENTRY_WIDTH(NUM_ENTRY_BITS)) addr_cam (addr_cam_data_in, addr_cam_addr_in, addr_cam_read_en, addr_cam_write_en, addr_cam_search_en,
-  addr_cam_reset, addr_cam_data_out, addr_cam_addr_out, addr_cam_match);
+addr_cam #(.WORD_SIZE(ADDR_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) addr_cam_0 (addr_cam_data_in_0, addr_cam_addr_in_0, addr_cam_read_en_0, addr_cam_write_en_0, addr_cam_search_en_0,
+  addr_cam_reset, addr_cam_data_out_0, addr_cam_addr_out_0, addr_cam_match_0);
+addr_cam #(.WORD_SIZE(ADDR_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) addr_cam_1 (addr_cam_data_in_1, addr_cam_addr_in_1, addr_cam_read_en_1, addr_cam_write_en_1, addr_cam_search_en_1,
+  addr_cam_reset, addr_cam_data_out_1, addr_cam_addr_out_1, addr_cam_match_1);
+addr_cam #(.WORD_SIZE(ADDR_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) addr_cam_2 (addr_cam_data_in_2, addr_cam_addr_in_2, addr_cam_read_en_2, addr_cam_write_en_2, addr_cam_search_en_2,
+  addr_cam_reset, addr_cam_data_out_2, addr_cam_addr_out_2, addr_cam_match_2);
+addr_cam #(.WORD_SIZE(ADDR_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) addr_cam_3 (addr_cam_data_in_3, addr_cam_addr_in_3, addr_cam_read_en_3, addr_cam_write_en_3, addr_cam_search_en_3,
+  addr_cam_reset, addr_cam_data_out_3, addr_cam_addr_out_3, addr_cam_match_3);
 
-cnt_cam #(.WORD_SIZE(CNT_SIZE), .ROW_NUM(NUM_ENTRY), .ENTRY_WIDTH(NUM_ENTRY_BITS)) cnt_cam (cnt_cam_data_in, cnt_cam_addr_in, cnt_cam_read_en, cnt_cam_write_en, cnt_cam_search_en, cnt_cam_reset, cnt_cam_data_out, cnt_cam_addr_out, cnt_cam_match, clk, rstn, max_en, next_max_cnt);
-
-
+cnt_cam #(.WORD_SIZE(CNT_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) cnt_cam_0 (cnt_cam_data_in_0, cnt_cam_addr_in_0, cnt_cam_read_en_0, cnt_cam_write_en_0, cnt_cam_search_en_0,
+  cnt_cam_reset, cnt_cam_data_out_0, cnt_cam_addr_out_0, cnt_cam_match_0, clk, rstn, max_en, next_max_cnt_0);
+cnt_cam #(.WORD_SIZE(CNT_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) cnt_cam_1 (cnt_cam_data_in_1, cnt_cam_addr_in_1, cnt_cam_read_en_1, cnt_cam_write_en_1, cnt_cam_search_en_1,
+  cnt_cam_reset, cnt_cam_data_out_1, cnt_cam_addr_out_1, cnt_cam_match_1, clk, rstn, max_en, next_max_cnt_1);
+cnt_cam #(.WORD_SIZE(CNT_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) cnt_cam_2 (cnt_cam_data_in_2, cnt_cam_addr_in_2, cnt_cam_read_en_2, cnt_cam_write_en_2, cnt_cam_search_en_2,
+  cnt_cam_reset, cnt_cam_data_out_2, cnt_cam_addr_out_2, cnt_cam_match_2, clk, rstn, max_en, next_max_cnt_2);
+cnt_cam #(.WORD_SIZE(CNT_SIZE), .ROW_NUM((NUM_ENTRY>>2)), .ENTRY_WIDTH(NUM_ENTRY_BITS-2)) cnt_cam_3 (cnt_cam_data_in_3, cnt_cam_addr_in_3, cnt_cam_read_en_3, cnt_cam_write_en_3, cnt_cam_search_en_3,
+  cnt_cam_reset, cnt_cam_data_out_3, cnt_cam_addr_out_3, cnt_cam_match_3, clk, rstn, max_en, next_max_cnt_3);
 
 endmodule

@@ -83,7 +83,7 @@ initial begin
   rstn = 1'b0;
   #10
   rstn = 1'b1;
-  repeat (100000000) @(posedge clk);
+  repeat (10000000) @(posedge clk);
   $fclose(f);
   $finish;
 end
@@ -106,17 +106,34 @@ end
 
 
 generate
-  for (i = 0; i < NUM_ENTRY; i=i+1) begin
-//    assign addr_table[i]    = u_rfm_unit_bank.addr_table[i];
-//    assign cnt_table[i]     = u_rfm_unit_bank.cnt_table[i];
-    for (j = 0; j < CNT_SIZE; j=j+1) begin
-      assign cnt_table[i][j]  = u_rfm_unit_bank.cnt_cam.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+  for (i = 0; i < (NUM_ENTRY >> 2); i = i + 1) begin
+    for (j = 0; j < ADDR_SIZE; j = j + 1) begin
+      assign addr_table[i + 0 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.addr_cam_0.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
     end
-    for (j = 0; j < ADDR_SIZE; j=j+1) begin
-      assign addr_table[i][j] = u_rfm_unit_bank.addr_cam.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+    for (j = 0; j < ADDR_SIZE; j = j + 1) begin
+      assign addr_table[i + 1 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.addr_cam_1.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+    end
+    for (j = 0; j < ADDR_SIZE; j = j + 1) begin
+      assign addr_table[i + 2 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.addr_cam_2.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+    end
+    for (j = 0; j < ADDR_SIZE; j = j + 1) begin
+      assign addr_table[i + 3 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.addr_cam_3.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+    end
+    for (j = 0; j < CNT_SIZE; j = j + 1) begin
+      assign cnt_table[i + 0 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.cnt_cam_0.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+    end
+    for (j = 0; j < CNT_SIZE; j = j + 1) begin
+      assign cnt_table[i + 1 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.cnt_cam_1.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+    end
+    for (j = 0; j < CNT_SIZE; j = j + 1) begin
+      assign cnt_table[i + 2 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.cnt_cam_2.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
+    end
+    for (j = 0; j < CNT_SIZE; j = j + 1) begin
+      assign cnt_table[i + 3 * (NUM_ENTRY >> 2)][j] = u_rfm_unit_bank.cnt_cam_3.larray_inst[i].latch_array_.latch_inst[j].latch_.q;
     end
   end
 endgenerate
+
 
 
 rfm_unit_bank
