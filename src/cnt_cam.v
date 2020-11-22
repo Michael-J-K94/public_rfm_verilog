@@ -1,4 +1,4 @@
-module cnt_cam (data_in, addr_in, read_en, write_en, search_en, reset, data_out, addr_out, match, clk, rstn, max_en, max);
+module cnt_cam_64 (data_in, addr_in, read_en, write_en, search_en, reset, data_out, addr_out, match, clk, rstn, max_en, max);
 
 parameter WORD_SIZE = 16;
 parameter ENTRY_WIDTH = 7; // [log2(ROW_NUM)]
@@ -36,141 +36,116 @@ encoder #(.ROW_NUM(ROW_NUM), .ENTRY_WIDTH(ENTRY_WIDTH)) encoder_ (match_array, m
 
 
 /*  Find Max   */
+
 input clk;
 input rstn;
 input max_en;
 output [WORD_SIZE-1:0] max;
 
-wire [WORD_SIZE-1:0] max_0;
-wire [WORD_SIZE-1:0] max_1;
-wire [WORD_SIZE-1:0] max_0_0;
-wire [WORD_SIZE-1:0] max_0_1;
-wire [WORD_SIZE-1:0] max_1_0;
-wire [WORD_SIZE-1:0] max_1_1;
-wire [WORD_SIZE-1:0] max_0_0_0;
-wire [WORD_SIZE-1:0] max_0_0_1;
-wire [WORD_SIZE-1:0] max_0_1_0;
-wire [WORD_SIZE-1:0] max_0_1_1;
-wire [WORD_SIZE-1:0] max_1_0_0;
-wire [WORD_SIZE-1:0] max_1_0_1;
-wire [WORD_SIZE-1:0] max_1_1_0;
-wire [WORD_SIZE-1:0] max_1_1_1;
-wire [WORD_SIZE-1:0] max_0_0_0_0;
-wire [WORD_SIZE-1:0] max_0_0_0_1;
-wire [WORD_SIZE-1:0] max_0_0_1_0;
-wire [WORD_SIZE-1:0] max_0_0_1_1;
-wire [WORD_SIZE-1:0] max_0_1_0_0;
-wire [WORD_SIZE-1:0] max_0_1_0_1;
-wire [WORD_SIZE-1:0] max_0_1_1_0;
-wire [WORD_SIZE-1:0] max_0_1_1_1;
-wire [WORD_SIZE-1:0] max_1_0_0_0;
-wire [WORD_SIZE-1:0] max_1_0_0_1;
-wire [WORD_SIZE-1:0] max_1_0_1_0;
-wire [WORD_SIZE-1:0] max_1_0_1_1;
-wire [WORD_SIZE-1:0] max_1_1_0_0;
-wire [WORD_SIZE-1:0] max_1_1_0_1;
-wire [WORD_SIZE-1:0] max_1_1_1_0;
-wire [WORD_SIZE-1:0] max_1_1_1_1;
-wire [WORD_SIZE-1:0] max_0_0_0_0_0;
-wire [WORD_SIZE-1:0] max_0_0_0_0_1;
-wire [WORD_SIZE-1:0] max_0_0_0_1_0;
-wire [WORD_SIZE-1:0] max_0_0_0_1_1;
-wire [WORD_SIZE-1:0] max_0_0_1_0_0;
-wire [WORD_SIZE-1:0] max_0_0_1_0_1;
-wire [WORD_SIZE-1:0] max_0_0_1_1_0;
-wire [WORD_SIZE-1:0] max_0_0_1_1_1;
-wire [WORD_SIZE-1:0] max_0_1_0_0_0;
-wire [WORD_SIZE-1:0] max_0_1_0_0_1;
-wire [WORD_SIZE-1:0] max_0_1_0_1_0;
-wire [WORD_SIZE-1:0] max_0_1_0_1_1;
-wire [WORD_SIZE-1:0] max_0_1_1_0_0;
-wire [WORD_SIZE-1:0] max_0_1_1_0_1;
-wire [WORD_SIZE-1:0] max_0_1_1_1_0;
-wire [WORD_SIZE-1:0] max_0_1_1_1_1;
-wire [WORD_SIZE-1:0] max_1_0_0_0_0;
-wire [WORD_SIZE-1:0] max_1_0_0_0_1;
-wire [WORD_SIZE-1:0] max_1_0_0_1_0;
-wire [WORD_SIZE-1:0] max_1_0_0_1_1;
-wire [WORD_SIZE-1:0] max_1_0_1_0_0;
-wire [WORD_SIZE-1:0] max_1_0_1_0_1;
-wire [WORD_SIZE-1:0] max_1_0_1_1_0;
-wire [WORD_SIZE-1:0] max_1_0_1_1_1;
-wire [WORD_SIZE-1:0] max_1_1_0_0_0;
-wire [WORD_SIZE-1:0] max_1_1_0_0_1;
-wire [WORD_SIZE-1:0] max_1_1_0_1_0;
-wire [WORD_SIZE-1:0] max_1_1_0_1_1;
-wire [WORD_SIZE-1:0] max_1_1_1_0_0;
-wire [WORD_SIZE-1:0] max_1_1_1_0_1;
-wire [WORD_SIZE-1:0] max_1_1_1_1_0;
-wire [WORD_SIZE-1:0] max_1_1_1_1_1;
+reg [1:0] mode;
 
-assign max          = (max_0 > max_1) ? max_0 : max_1;
-assign max_0        = (max_0_0 > max_0_1) ? max_0_0 : max_0_1;
-assign max_1        = (max_1_0 > max_1_1) ? max_1_0 : max_1_1;
-assign max_0_0      = (max_0_0_0 > max_0_0_1) ? max_0_0_0 : max_0_0_1;
-assign max_0_1      = (max_0_1_0 > max_0_1_1) ? max_0_1_0 : max_0_1_1;
-assign max_1_0      = (max_1_0_0 > max_1_0_1) ? max_1_0_0 : max_1_0_1;
-assign max_1_1      = (max_1_1_0 > max_1_1_1) ? max_1_1_0 : max_1_1_1;
+wire [WORD_SIZE-1:0] temp_max;
+wire [WORD_SIZE-1:0] temp_max_0;
+wire [WORD_SIZE-1:0] temp_max_1;
+reg [WORD_SIZE-1:0] temp_max_0_0;
+reg [WORD_SIZE-1:0] temp_max_0_1;
+reg [WORD_SIZE-1:0] temp_max_1_0;
+reg [WORD_SIZE-1:0] temp_max_1_1;
 
-assign max_0_0_0    = (max_0_0_0_0 > max_0_0_0_1) ? max_0_0_0_0 : max_0_0_0_1;
-assign max_0_0_1    = (max_0_0_1_0 > max_0_0_1_1) ? max_0_0_1_0 : max_0_0_1_1;
-assign max_0_1_0    = (max_0_1_0_0 > max_0_1_0_1) ? max_0_1_0_0 : max_0_1_0_1;
-assign max_0_1_1    = (max_0_1_1_0 > max_0_1_1_1) ? max_0_1_1_0 : max_0_1_1_1;
-assign max_1_0_0    = (max_1_0_0_0 > max_1_0_0_1) ? max_1_0_0_0 : max_1_0_0_1;
-assign max_1_0_1    = (max_1_0_1_0 > max_1_0_1_1) ? max_1_0_1_0 : max_1_0_1_1;
-assign max_1_1_0    = (max_1_1_0_0 > max_1_1_0_1) ? max_1_1_0_0 : max_1_1_0_1;
-assign max_1_1_1    = (max_1_1_1_0 > max_1_1_1_1) ? max_1_1_1_0 : max_1_1_1_1;
+wire [WORD_SIZE-1:0] max_2 [1:0];
+wire [WORD_SIZE-1:0] max_4 [3:0];
+wire [WORD_SIZE-1:0] max_8 [7:0];
+wire [WORD_SIZE-1:0] max_16 [15:0];
 
-assign max_0_0_0_0    = (max_0_0_0_0_0 > max_0_0_0_0_1) ? max_0_0_0_0_0 : max_0_0_0_0_1;
-assign max_0_0_0_1    = (max_0_0_0_1_0 > max_0_0_0_1_1) ? max_0_0_0_1_0 : max_0_0_0_1_1;
-assign max_0_0_1_0    = (max_0_0_1_0_0 > max_0_0_1_0_1) ? max_0_0_1_0_0 : max_0_0_1_0_1;
-assign max_0_0_1_1    = (max_0_0_1_1_0 > max_0_0_1_1_1) ? max_0_0_1_1_0 : max_0_0_1_1_1;
-assign max_0_1_0_0    = (max_0_1_0_0_0 > max_0_1_0_0_1) ? max_0_1_0_0_0 : max_0_1_0_0_1;
-assign max_0_1_0_1    = (max_0_1_0_1_0 > max_0_1_0_1_1) ? max_0_1_0_1_0 : max_0_1_0_1_1;
-assign max_0_1_1_0    = (max_0_1_1_0_0 > max_0_1_1_0_1) ? max_0_1_1_0_0 : max_0_1_1_0_1;
-assign max_0_1_1_1    = (max_0_1_1_1_0 > max_0_1_1_1_1) ? max_0_1_1_1_0 : max_0_1_1_1_1;
-assign max_1_0_0_0    = (max_1_0_0_0_0 > max_1_0_0_0_1) ? max_1_0_0_0_0 : max_1_0_0_0_1;
-assign max_1_0_0_1    = (max_1_0_0_1_0 > max_1_0_0_1_1) ? max_1_0_0_1_0 : max_1_0_0_1_1;
-assign max_1_0_1_0    = (max_1_0_1_0_0 > max_1_0_1_0_1) ? max_1_0_1_0_0 : max_1_0_1_0_1;
-assign max_1_0_1_1    = (max_1_0_1_1_0 > max_1_0_1_1_1) ? max_1_0_1_1_0 : max_1_0_1_1_1;
-assign max_1_1_0_0    = (max_1_1_0_0_0 > max_1_1_0_0_1) ? max_1_1_0_0_0 : max_1_1_0_0_1;
-assign max_1_1_0_1    = (max_1_1_0_1_0 > max_1_1_0_1_1) ? max_1_1_0_1_0 : max_1_1_0_1_1;
-assign max_1_1_1_0    = (max_1_1_1_0_0 > max_1_1_1_0_1) ? max_1_1_1_0_0 : max_1_1_1_0_1;
-assign max_1_1_1_1    = (max_1_1_1_1_0 > max_1_1_1_1_1) ? max_1_1_1_1_0 : max_1_1_1_1_1;
 
-assign max_0_0_0_0_0  = (data_array[0]  > data_array[1])   ? data_array[0]   : data_array[1];
-assign max_0_0_0_0_1  = (data_array[2]  > data_array[3])   ? data_array[2]   : data_array[3];
-assign max_0_0_0_1_0  = (data_array[4]  > data_array[5])   ? data_array[4]   : data_array[5];
-assign max_0_0_0_1_1  = (data_array[6]  > data_array[7])   ? data_array[6]   : data_array[7];
-assign max_0_0_1_0_0  = (data_array[8]  > data_array[9])   ? data_array[8]   : data_array[9];
-assign max_0_0_1_0_1  = (data_array[10] > data_array[11])  ? data_array[10]  : data_array[11];
-assign max_0_0_1_1_0  = (data_array[12] > data_array[13])  ? data_array[12]  : data_array[13];
-assign max_0_0_1_1_1  = (data_array[14] > data_array[15])  ? data_array[14]  : data_array[15];
-assign max_0_1_0_0_0  = (data_array[16] > data_array[17])  ? data_array[16]  : data_array[17];
-assign max_0_1_0_0_1  = (data_array[18] > data_array[19])  ? data_array[18]  : data_array[19];
-assign max_0_1_0_1_0  = (data_array[20] > data_array[21])  ? data_array[20]  : data_array[21];
-assign max_0_1_0_1_1  = (data_array[22] > data_array[23])  ? data_array[22]  : data_array[23];
-assign max_0_1_1_0_0  = (data_array[24] > data_array[25])  ? data_array[24]  : data_array[25];
-assign max_0_1_1_0_1  = (data_array[26] > data_array[27])  ? data_array[26]  : data_array[27];
-assign max_0_1_1_1_0  = (data_array[28] > data_array[29])  ? data_array[28]  : data_array[29];
-assign max_0_1_1_1_1  = (data_array[30] > data_array[31])  ? data_array[30]  : data_array[31];
-assign max_1_0_0_0_0  = (data_array[32] > data_array[33])  ? data_array[32]  : data_array[33];
-assign max_1_0_0_0_1  = (data_array[34] > data_array[35])  ? data_array[34]  : data_array[35];
-assign max_1_0_0_1_0  = (data_array[36] > data_array[37])  ? data_array[36]  : data_array[37];
-assign max_1_0_0_1_1  = (data_array[38] > data_array[39])  ? data_array[38]  : data_array[39];
-assign max_1_0_1_0_0  = (data_array[40] > data_array[41])  ? data_array[40]  : data_array[41];
-assign max_1_0_1_0_1  = (data_array[42] > data_array[43])  ? data_array[42]  : data_array[43];
-assign max_1_0_1_1_0  = (data_array[44] > data_array[45])  ? data_array[44]  : data_array[45];
-assign max_1_0_1_1_1  = (data_array[46] > data_array[47])  ? data_array[46]  : data_array[47];
-assign max_1_1_0_0_0  = (data_array[48] > data_array[49])  ? data_array[48]  : data_array[49];
-assign max_1_1_0_0_1  = (data_array[40] > data_array[51])  ? data_array[50]  : data_array[51];
-assign max_1_1_0_1_0  = (data_array[52] > data_array[53])  ? data_array[52]  : data_array[53];
-assign max_1_1_0_1_1  = (data_array[54] > data_array[55])  ? data_array[54]  : data_array[55];
-assign max_1_1_1_0_0  = (data_array[56] > data_array[57])  ? data_array[56]  : data_array[57];
-assign max_1_1_1_0_1  = (data_array[58] > data_array[59])  ? data_array[58]  : data_array[59];
-assign max_1_1_1_1_0  = (data_array[60] > data_array[61])  ? data_array[60]  : data_array[61];
-assign max_1_1_1_1_1  = (data_array[62] > data_array[63])  ? data_array[62]  : data_array[63];
+assign max = (temp_max_0 > temp_max_1) ? temp_max_0 : temp_max_1;
+assign temp_max_0 = (temp_max_0_0 > temp_max_0_1) ? temp_max_0_0 : temp_max_0_1;
+assign temp_max_1 = (temp_max_1_0 > temp_max_1_1) ? temp_max_1_0 : temp_max_1_1;
 
+
+always @(posedge clk or negedge rstn) begin
+  if (~rstn) begin
+    mode <= 2'b00;
+  end
+  else if (max_en) begin
+    mode <= mode + 2'b01;
+  end
+  else begin
+    mode <= 2'b00;
+  end
+end
+
+always @(posedge clk or negedge rstn) begin
+  if (~rstn) begin
+    temp_max_0_0 <= {WORD_SIZE{1'b0}};
+  end
+  else if (max_en && mode == 2'b00) begin
+    temp_max_0_0 <= temp_max;
+  end
+  else begin
+    temp_max_0_0 <= temp_max_0_0;
+  end
+end
+
+always @(posedge clk or negedge rstn) begin
+  if (~rstn) begin
+    temp_max_0_1 <= {WORD_SIZE{1'b0}};
+  end
+  else if (max_en && mode == 2'b01) begin
+    temp_max_0_1 <= temp_max;
+  end
+  else begin
+    temp_max_0_1 <= temp_max_0_1;
+  end
+end
+
+always @(posedge clk or negedge rstn) begin
+  if (~rstn) begin
+    temp_max_1_0 <= {WORD_SIZE{1'b0}};
+  end
+  else if (max_en && mode == 2'b10) begin
+    temp_max_1_0 <= temp_max;
+  end
+  else begin
+    temp_max_1_0 <= temp_max_1_0;
+  end
+end
+
+always @(posedge clk or negedge rstn) begin
+  if (~rstn) begin
+    temp_max_1_1 <= {WORD_SIZE{1'b0}};
+  end
+  else if (max_en && mode == 2'b11) begin
+    temp_max_1_1 <= temp_max;
+  end
+  else begin
+    temp_max_1_1 <= temp_max_1_1;
+  end
+end
+
+
+assign temp_max = (max_2[0] > max_2[1]) ? max_2[0] : max_2[1];
+
+generate for (i = 0; i < 2; i = i+1) begin
+  assign max_2[i] = (max_4[2*i] > max_4[2*i+1]) ? max_4[2*i] : max_4[2*i+1];
+end
+endgenerate
+
+generate for (i = 0; i < 4; i = i+1) begin
+  assign max_4[i] = (max_8[2*i] > max_8[2*i+1]) ? max_8[2*i] : max_8[2*i+1];
+end
+endgenerate
+
+generate for (i = 0; i < 8; i = i+1) begin
+  assign max_8[i] = (max_16[2*i] > max_16[2*i+1]) ? max_16[2*i] : max_16[2*i+1];
+end
+endgenerate
+
+
+generate for (i = 0; i < 16; i = i+1) begin
+  assign max_16[i] = mode[1] ? (mode[0] ? data_array[16*i+3] : data_array[16*i+2]) : (mode[0] ? data_array[16*i+1] : data_array[16*i]);
+end
+endgenerate
 
 endmodule
 
