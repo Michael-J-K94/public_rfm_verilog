@@ -3,9 +3,9 @@
 module rfm_tb();
 
 
-localparam NUM_ENTRY = 64; 
-localparam NUM_ENTRY_BITS = 6; // log2 (NUM_ENTRY)
-localparam RFM_TH = 20; 
+localparam NUM_ENTRY = 512; 
+localparam NUM_ENTRY_BITS = 9; // log2 (NUM_ENTRY)
+localparam RFM_TH = 649; 
 localparam ADDR_SIZE = 18; 
 localparam CNT_SIZE = 32; 
 

@@ -1,17 +1,18 @@
 
 set NUM_ENTRY [getenv "NUM_ENTRY"]
 set RFM_TH    [getenv "RFM_TH"]
+set NUM_BIT    [getenv "NUM_BIT"]
 
 #/* All verilog files, separated by spaces         */
 set base_dir [getenv "BASE_DIR"]
-set my_verilog_files [list $base_dir/src/rfm_unit_bank/rfm_unit_bank_${NUM_ENTRY}_${RFM_TH}.v \
+set my_verilog_files [list $base_dir/src/rfm_unit_bank/rfm_unit_bank_${NUM_ENTRY}_${RFM_TH}_${NUM_BIT}.v \
                            $base_dir/src/addr_cam.v \
-                           $base_dir/src/cnt_cam/cnt_cam_${NUM_ENTRY}.v \
+                           $base_dir/src/cnt_cam/cnt_cam_${NUM_ENTRY}_${RFM_TH}_${NUM_BIT}.v \
                            $base_dir/src/cam_components.v]
 
 
 #/* Top-level Module                               */
-set my_toplevel rfm_unit_bank_${NUM_ENTRY}_${RFM_TH}
+set my_toplevel rfm_unit_bank_${NUM_ENTRY}_${RFM_TH}_${NUM_BIT}
 
 #/* Target frequency in MHz for optimization       */
 set my_clk_freq_MHz [getenv "SYN_FREQ"]
@@ -90,12 +91,12 @@ set_false_path -from $my_reset_pin -to $clk_name
 #compile -ungroup_all -map_effort medium
 #compile -incremental_mapping -map_effort medium
 #compile_ultra -no_auto_ungroup
-compile_ultra 
+compile_ultra -retime
 
 check_design
 report_constraint -all_violators
 
-set output_path [format "%s_%s/%s_%s" $base_dir/syn/output/rfm_unit_bank $my_clk_freq_MHz $NUM_ENTRY $RFM_TH]
+set output_path $base_dir/syn/output/$my_toplevel/$my_clk_freq_MHz
 
 exec mkdir -p $output_path
 

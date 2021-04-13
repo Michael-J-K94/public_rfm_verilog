@@ -2,19 +2,19 @@
 import time
 import numpy as np
 
-NUM_ENTRY = 64
-NUM_ROW = 200
-TRACE_SIZE = 1000
+NUM_ENTRY = 512
+NUM_ROW = 2000
+TRACE_SIZE = 2000
 
-RFM_TH = 20
+RFM_TH = 649
 
 if __name__ == '__main__':
 
   #np.random.seed(777)
   np.random.seed(int(time.time()))
 
-  trace = np.random.randint(1, NUM_ROW+1, size=TRACE_SIZE)
-  np.savetxt('trace.txt', trace, fmt = '%d')
+#  trace = np.random.randint(1, NUM_ROW+1, size=TRACE_SIZE)
+#  np.savetxt('trace.txt', trace, fmt = '%d')
   trace = np.loadtxt('trace.txt', dtype = 'int')
 
   table = []

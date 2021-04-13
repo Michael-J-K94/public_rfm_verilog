@@ -1,8 +1,8 @@
 module cnt_cam (data_in, addr_in, read_en, write_en, search_en, reset, data_out, addr_out, match, clk, rstn, max_en, max);
 
-parameter WORD_SIZE = 16;
+parameter WORD_SIZE = 13;
 parameter ENTRY_WIDTH = 7; // [log2(ROW_NUM)]
-parameter ROW_NUM = 68;
+parameter ROW_NUM = 128;
 
 input [WORD_SIZE-1:0] data_in;
 input [ENTRY_WIDTH-1:0] addr_in;
@@ -56,9 +56,9 @@ wire [WORD_SIZE-1:0] max_2 [1:0];
 wire [WORD_SIZE-1:0] max_4 [3:0];
 wire [WORD_SIZE-1:0] max_8 [7:0];
 wire [WORD_SIZE-1:0] max_16 [15:0];
-//wire [WORD_SIZE-1:0] max_32 [31:0];
-//wire [WORD_SIZE-1:0] max_64 [63:0];
-//wire [WORD_SIZE-1:0] max_128 [127:0];
+wire [WORD_SIZE-1:0] max_32 [31:0];
+wire [WORD_SIZE-1:0] max_64 [63:0];
+wire [WORD_SIZE-1:0] max_128 [127:0];
 //wire [WORD_SIZE-1:0] max_256 [255:0];
 
 
@@ -135,7 +135,6 @@ generate for (i = 0; i < 2; i = i+1) begin
 end
 endgenerate
 
-/*
 generate for (i = 0; i < 4; i = i+1) begin
   assign max_4[i] = (max_8[2*i] > max_8[2*i+1]) ? max_8[2*i] : max_8[2*i+1];
 end
@@ -143,12 +142,6 @@ endgenerate
 
 generate for (i = 0; i < 8; i = i+1) begin
   assign max_8[i] = (max_16[2*i] > max_16[2*i+1]) ? max_16[2*i] : max_16[2*i+1];
-end
-endgenerate
-
-generate for (i = 0; i < 16; i = i+1) begin
-  assign max_16[i] = mode[1] ? (mode[0] ? data_array[4*i+3] : data_array[4*i+2]) : (mode[0] ? data_array[4*i+1] : data_array[4*i]);
-  assign max_16[i] = (max_32[2*i] > max_32[2*i+1]) ? max_32[2*i] : max_32[2*i+1];
 end
 endgenerate
 
@@ -162,12 +155,10 @@ generate for (i = 0; i < 32; i = i+1) begin
   assign max_32[i] = (max_64[2*i] > max_64[2*i+1]) ? max_64[2*i] : max_64[2*i+1];
 end
 endgenerate
-*/
 
 
-
-generate for (i = 0; i < 4; i = i+1) begin
-  assign max_4[i] = mode[1] ? (mode[0] ? data_array[4*i+3] : data_array[4*i+2]) : (mode[0] ? data_array[4*i+1] : data_array[4*i]);
+generate for (i = 0; i < 64; i = i+1) begin
+  assign max_64[i] = mode[1] ? (mode[0] ? data_array[4*i+3] : data_array[4*i+2]) : (mode[0] ? data_array[4*i+1] : data_array[4*i]);
 end
 endgenerate
 
